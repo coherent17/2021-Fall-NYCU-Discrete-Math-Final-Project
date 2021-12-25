@@ -3,7 +3,7 @@ CFLAGS = -g -Wall
 CHECKCC = valgrind
 CHECKFLAGS = --leak-check=full -s
 
-OBJS = Maximum_K_core
+OBJS = sequential_degeneracy
 
 all: $(OBJS)
 
