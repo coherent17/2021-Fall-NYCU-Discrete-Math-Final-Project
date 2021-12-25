@@ -1,10 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
-#include <string.h>
 
 #define MAX_SIZE 1000
 
+//allocate adjancencyMatrix and initialize
 bool **adjacencyMatrix(){
     bool **Matrix = (bool **)malloc(sizeof(bool *) * MAX_SIZE);
     for(int i = 0; i < MAX_SIZE;i++){
