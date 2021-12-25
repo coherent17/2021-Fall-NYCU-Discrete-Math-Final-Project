@@ -11,12 +11,12 @@ all: $(OBJS)
 	$(CC) $(CFLAGS) $< -o $@
 
 do:
-	./Maximum_K_core < testcase1
-	./Maximum_K_core < testcase2
+	./$(OBJS) < testcase1
+	./$(OBJS) < testcase2
 
 check:
-	$(CHECKCC) $(CHECKFLAGS) ./Maximum_K_core < testcase1
-	$(CHECKCC) $(CHECKFLAGS) ./Maximum_K_core < testcase2
+	$(CHECKCC) $(CHECKFLAGS) ./$(OBJS) < testcase1
+	$(CHECKCC) $(CHECKFLAGS) ./$(OBJS) < testcase2
 
 clean:
 	rm -f $(OBJS)
