@@ -93,7 +93,7 @@ bool **k_core_degeneracy(int k, bool **Matrix, int max_vertex){
         }
     }
 
-    while(1){
+    for(;;){
         int *degree = getDegree(resultMatrix, max_vertex);
 
         int count = 0;
@@ -119,7 +119,7 @@ bool **k_core_degeneracy(int k, bool **Matrix, int max_vertex){
 }
 
 bool **sequential_degeneracy(int k, bool **resultMatrix, int max_vertex){
-    while(1){
+    for(;;){
         int *degree = getDegree(resultMatrix, max_vertex);
 
         int count = 0;
@@ -165,8 +165,8 @@ int main(){
     bool **Matrix = adjacencyMatrix();
     int max_vertex = readfile(Matrix);
     bool **resultMatrix;
-    resultMatrix = k_core_degeneracy(1, Matrix, max_vertex);
-    for (int i = 2;;++i){
+    resultMatrix = k_core_degeneracy(3, Matrix, max_vertex);
+    for (int i = 4;;++i){
         resultMatrix = sequential_degeneracy(i, resultMatrix, max_vertex);
         if(allzero(resultMatrix,max_vertex)){
             freeResultMatrix(resultMatrix, max_vertex);
