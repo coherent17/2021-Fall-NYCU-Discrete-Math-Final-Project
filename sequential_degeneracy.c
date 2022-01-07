@@ -11,11 +11,14 @@ bool **adjacencyMatrix(){
         Matrix[i] = (bool *)malloc(sizeof(bool) * MAX_SIZE);
     }
     //init
+    /*
     for (int i = 0; i < MAX_SIZE;++i){
         for (int j = i+1; j < MAX_SIZE;++j){
             Matrix[i][j] = 0;
         }
     }
+    */
+    
     return Matrix;
 }
 
@@ -28,14 +31,12 @@ void freeMatrix(bool **Matrix){
 
 int readfile(bool **Matrix){
     int a, b;
-    int max_ab = 0;
     int max_vertex = 0;
     while(scanf("%d %d",&a, &b)!=EOF){
         //printf("%d %d\n", a, b);
-        max_ab = a > b ? a : b;
-        max_vertex = max_vertex > max_ab ? max_vertex : max_ab;
+        max_vertex = max_vertex > b ? max_vertex : b;
         Matrix[a][b] = 1;
-        Matrix[b][a] = 1;
+        //Matrix[b][a] = 1;
     }
     return max_vertex;
 }
@@ -161,9 +162,20 @@ void freeResultMatrix(bool **Matrix, int max_vertex){
     free(Matrix);
 }
 
+void printMatrix(bool **Matrix, int max_vertex){
+    for (int i = 0; i < max_vertex;i++){
+        for (int j = 0; j < max_vertex;j++){
+            printf("%d ", Matrix[i][j]);
+        }
+        printf("\n");
+    }
+    printf("\n");
+}
+
 int main(){
     bool **Matrix = adjacencyMatrix();
     int max_vertex = readfile(Matrix);
+    //printMatrix(Matrix, max_vertex);
     bool **resultMatrix;
     resultMatrix = k_core_degeneracy(3, Matrix, max_vertex);
     for (int i = 4;;++i){
