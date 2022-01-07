@@ -196,6 +196,146 @@ Memory:3772
 ### 缺點
 *    1. 浪費記憶體，其實根本不需要$N*N$的方陣來存Graph。透過觀察，可以知道Undirect Graph的上三角矩陣及下三角矩陣其實是對稱的， 因此僅需要花費一半的空間存放，在traversal AdjacencyMatrix時，也不用找那麼大的範圍，僅需要針對上三角矩陣或是下三角矩陣找即可。
 
-*    2.這個暴力法在解Maximum K core時，每次都是從最一開始的AdjacencyMatrix開始解，而不是將前一次的結果當成下一次的Input去degeneracy，因此浪費相當多的時間。說白話一點就是我在做k=3的k_core_degeneracy時，是拿最一開始讀檔所建立的AdjacencyMatrix當成輸入，但其實比較有效率的方法應該是拿k=2的k_core_degeneracy所回傳的resultMatrix來當成k=3的輸入。
+*    2. 這個暴力法在解Maximum K core時，每次都是從最一開始的AdjacencyMatrix開始解，而不是將前一次的結果當成下一次的Input去degeneracy，因此浪費相當多的時間。說白話一點就是我在做k=3的k_core_degeneracy時，是拿最一開始讀檔所建立的AdjacencyMatrix當成輸入，但其實比較有效率的方法應該是拿k=2的k_core_degeneracy所回傳的resultMatrix來當成k=3的輸入。
 
 ## Brute Force Optimize:
+在這個方法中，我選擇使用AdjacencyMatrix的上三角矩陣，來存東西。為何使用上三角而不使用下三角的原因跟cache hit rate有關，使用上三角矩陣可以減少cache miss發生的機率。因為只使用上三角矩陣，上述的那些function勢必也需要修正，這邊僅提出幾個修改的方面。另外，也針對每次都重頭開始做degeneracy這點進行修正，改為sequential的degeneracy。
+
+*    1.對於兩個for loop traverse AdjacencyMatrix  
+inner loop可以少做一半的指令，因此效率會大幅提升，大約提升兩倍。
+```c=
+Before:
+for (int i = 0; i < VERTEX_COUNT;i++){
+    for (int j = 0; j < VERTEX_COUNT; j++){
+
+    }
+}
+
+After:
+for (int i = 0; i < VERTEX_COUNT;i++){
+    for (int j = i + 1; j < VERTEX_COUNT; j++){
+
+    }
+}
+```
+*    2.Degree  
+改成只使用上三角矩陣之後，在計算每個vertex的degree的時候，困擾了我一陣子。究竟要如何計算每個vertex的degree呢?其實很簡單當traverse $AdjacencyMatrix[i][j]$不為0時，表示$vertex_i$與$vertex_j$之間有edge相連，換句話說，也就是$degree[i]+1$及$degree[j]+1$
+```c=
+int *getDegree(bool **Matrix){
+    int *degree = malloc(sizeof(int) * VERTEX_COUNT);
+    for (int i = 0; i < VERTEX_COUNT;i++){
+        degree[i] = 0;
+    }
+    // using row-wise access to be a cache friendly function
+    for (int i = 0; i < VERTEX_COUNT; ++i){
+        for (int j = i+1; j <VERTEX_COUNT; ++j){
+            if (Matrix[i][j] == 1){
+                degree[i]++;
+                degree[j]++;
+            }
+        }
+    }
+    return degree;
+}
+```
+*    3.Sequential_degeneracy  
+sequential degeneracy做的事情其實跟前面所提到的degeneracy一樣，只是將輸入改為前一層的輸出，如此一來便不用重頭開始算。
+```c=
+bool **sequential_degeneracy(int k, bool **resultMatrix){
+    for(;;){
+        int *degree = getDegree(resultMatrix);
+
+        int count = 0;
+        for (int i = 0; i < VERTEX_COUNT;++i){
+            if(degree[i]<k && degree[i]!=0){
+                count++;
+            }
+        }
+
+        if(count==0){
+            free(degree);
+            return resultMatrix;
+        }
+
+        for (int i = 0; i < VERTEX_COUNT; ++i){
+            if (degree[i] < k){
+                resultMatrix = deleteVertex(resultMatrix, i);
+            }
+        }
+        free(degree);
+    }
+    return resultMatrix;
+}
+```
+
+### 結果
+Time:1160
+Memory:3820
+![](https://i.imgur.com/2J3KDk3.png)
+較前一次Brute force的解法進步了不少。
+
+### 缺點
+*    1.每次都還是會去檢查那些先前已經被刪除的vertex的degree，如果能做一個Linkedlist去存剩餘那些vertex仍在Graph中，之後在traverse的時候，沿著linkedlist去尋找即可，便不用浪費時間去計算那些已經被刪除的vertex了。我有試著要用linkedlist製作類似look up table的東西，使我不用traversal整個AdjacencyMatrix，而只要去看linkedlist中所存那些vertex的degree即可。但是因為我這個程式一直找不到bug，所以就不放出來獻醜了，僅分享或許這是一個可以再更進一步優化的地方。
+
+*    2.有些工作，其實不用一個一個做，不會因為順序顛倒而產生錯誤，或許可以使用Parallel Programming使用多顆CPU來加速運算。
+
+## ParallelOptimize
+雖然FormosaOJ僅開放使用一顆CPU運算，因此我如果進行平行化的程式設計在上面是看不到任何差異的，因此我決定在我的電腦上測試看看使用平行化程式設計是否會影響效能。但是題目提供的側資運算時間實在太少了，因此我到[Test Case Generator](https://test-case-generator.herokuapp.com/)產生比較大的側資讓我能夠比較出他們的差異。而我所使用的testcase也都有push到github上，也會在下面提供連結，供參考。在平行化上面，我使用的是GNU內部的OpenMP來使用多顆CPU運算。針對for loop能夠有效的加速。因為平行化之後的code比較複雜，因此我就不完整放上來了，僅貼上我放在github上的[網址](https://github.com/coherent17/Maximum-K_core/blob/main/Compare/ParallelOptimize.c)
+
+### 結果
+測試環境:
+我的測試環境是有8顆CPU給我做分配的，為了簡單起見，我這次最多只有使用到4顆CPU。
+![](https://i.imgur.com/IA9zXxD.png)
+
+#### [testcase1](https://github.com/coherent17/Maximum-K_core/blob/main/Compare/1000V100E.in): 1000 vertex, 100 edge
+
+|      Using CPU      | 1     | 2     | 3     |   4   |
+|:-------------------:| ----- | ----- | ----- |:-----:|
+| Execution Time(sec) | 0.061 | 0.033 | 0.023 | 0.019 |
+
+Data Visualization:
+![](https://i.imgur.com/VfBiQL2.png)
+
+
+#### [testcase2](https://github.com/coherent17/Maximum-K_core/blob/main/Compare/1000V1000E.in): 1000 vertex, 1000 edge
+|      Using CPU      | 1     | 2     | 3     |   4   |
+|:-------------------:| ----- | ----- | ----- |:-----:|
+| Execution Time(sec) | 0.150 | 0.063 | 0.049 | 0.043 |
+
+![](https://i.imgur.com/7FPrsoX.png)
+
+
+#### [testcase3](https://github.com/coherent17/Maximum-K_core/blob/main/Compare/1000V10000E.in): 1000 vertex, 10000 edge
+|      Using CPU      | 1     | 2     | 3     |   4   |
+|:-------------------:| ----- | ----- | ----- |:-----:|
+| Execution Time(sec) | 0.171 | 0.095 | 0.087 | 0.084 |
+
+![](https://i.imgur.com/zjMluFp.png)
+
+
+#### [testcase4](https://github.com/coherent17/Maximum-K_core/blob/main/Compare/1000V100000E.in): 1000 vertex 100000 edge
+|      Using CPU      | 1     | 2     | 3     |   4   |
+|:-------------------:| ----- | ----- | ----- |:-----:|
+| Execution Time(sec) | 0.450 | 0.388 | 0.398 | 0.393 |
+
+![](https://i.imgur.com/sRZRULi.png)
+如果想要在自己的環境跑我的平行化程式碼可以透過在terminal輸入:
+```bash=
+git clone https://github.com/coherent17/Maximum-K_core #clone program &testcase 
+cd Compare
+sudo apt install make # first time use make only
+make # compile the code
+make do1 # execute testcase1
+make do2 # execute testcase2
+make do3 # execute testcase3
+make do4 # execute testcase4
+make clean # delete the execute file
+```
+### 結果分析
+![](https://i.imgur.com/uPIfDOT.png)
+*    1.在同樣vertex的情況下，edge數越多則需要花費的時間越多。
+*    2.使用CPU越多，花費時間越少
+*    3.edge數越多，使用平行運算所提升的效能(performance)越少
+
+## 心得
+這次的期末project花了我好多時間，雖然在formosaOJ上面的表現沒有非常好，但是我成功透過平行運算將程式的效能大幅提升。透過這個project，讓我對graph這個資料結構更加熟悉，並且也學會如何分析function的時間複雜度以決定要以何種資料結構來存Graph。這次final project所有的code我都有push至我的github帳號留存，網址如下:https://github.com/coherent17/Maximum-K_core
