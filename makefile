@@ -3,7 +3,7 @@ CFLAGS = -g -Wall
 CHECKCC = valgrind
 CHECKFLAGS = --leak-check=full -s
 
-OBJS = sequential_degeneracy
+OBJS = triangular_matrix
 
 all: $(OBJS)
 
