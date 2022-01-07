@@ -1,22 +1,20 @@
 CC = gcc
 CFLAGS = -g -Wall
-CHECKCC = valgrind
-CHECKFLAGS = --leak-check=full -s
 
-OBJS = triangular_matrix
+OBJS = BruteForce BruteForceOptimize
 
 all: $(OBJS)
 
 %: %.c
 	$(CC) $(CFLAGS) $< -o $@
 
-do:
-	./$(OBJS) < testcase1
-	./$(OBJS) < testcase2
+do1:
+	time ./BruteForce < testcase1
+	time ./BruteForce < testcase2
 
-check:
-	$(CHECKCC) $(CHECKFLAGS) ./$(OBJS) < testcase1
-	$(CHECKCC) $(CHECKFLAGS) ./$(OBJS) < testcase2
+do2:
+	time ./BruteForceOptimize < testcase1
+	time ./BruteForceOptimize < testcase2
 
 clean:
 	rm -f $(OBJS)
