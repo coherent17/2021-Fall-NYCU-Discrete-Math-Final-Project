@@ -69,7 +69,7 @@ bool **deleteVertex(bool **Matrix, int vertextodelete){
 
 bool allzero(bool **matrix){
     for (int i = 0; i < VERTEX_COUNT;i++){
-        for (int j = 0; j < VERTEX_COUNT;j++){
+        for (int j = i+1; j < VERTEX_COUNT;j++){
             if(matrix[i][j]!=0){
                 return false;
             }
